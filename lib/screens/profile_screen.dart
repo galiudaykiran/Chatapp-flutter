@@ -4,6 +4,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
+import '../providers/settings_provider.dart';
+import '../theme/app_theme.dart';
+import '../widgets/full_image_viewer.dart';
+import '../widgets/user_avatar.dart';
 import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -61,87 +65,242 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
+    final settings = Provider.of<SettingsProvider>(context);
     final user = auth.currentUser;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile Settings'),
-        backgroundColor: const Color(0xFF075E54),
-        foregroundColor: Colors.white,
+        title: const Text('Profile & Settings'),
       ),
       body: user == null
-          ? const Center(child: Text('No user profile found'))
+          ? Center(child: Text('No user profile found', style: TextStyle(color: theme.textTheme.bodyMedium?.color)))
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
               child: Column(
                 children: [
                   const SizedBox(height: 16),
                   Center(
                     child: Stack(
                       children: [
-                        CircleAvatar(
-                          radius: 64,
-                          backgroundColor: const Color(0xFF128C7E),
-                          backgroundImage: user.profileImage != null && user.profileImage!.isNotEmpty
-                              ? NetworkImage(user.profileImage!)
-                              : null,
-                          child: (user.profileImage == null || user.profileImage!.isEmpty)
-                              ? Text(
-                                  user.username.isNotEmpty ? user.username[0].toUpperCase() : 'U',
-                                  style: const TextStyle(
-                                      fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white),
-                                )
-                              : null,
+                        GestureDetector(
+                          onTap: () {
+                            FullImageViewer.show(
+                              context,
+                              imageUrl: user.profileImage,
+                              title: user.username,
+                              subtitle: user.email,
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(3.5),
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: AppTheme.storyRingGradient,
+                            ),
+                            child: UserAvatar(
+                              username: user.username,
+                              profileImage: user.profileImage,
+                              radius: 58,
+                              fontSize: 48,
+                            ),
+                          ),
                         ),
                         Positioned(
-                          right: 0,
-                          bottom: 0,
+                          right: 4,
+                          bottom: 4,
                           child: InkWell(
                             onTap: _isUploading ? null : _pickAndUploadProfileImage,
-                            child: CircleAvatar(
-                              radius: 20,
-                              backgroundColor: const Color(0xFF25D366),
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryEmerald,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isDark ? AppTheme.bgDark : AppTheme.bgLight,
+                                  width: 2.5,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.primaryEmerald.withValues(alpha: 0.4),
+                                    blurRadius: 10,
+                                  ),
+                                ],
+                              ),
                               child: _isUploading
                                   ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
+                                      width: 18,
+                                      height: 18,
                                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                                     )
-                                  : const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                                  : const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 18),
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   Text(
-                    'Tap camera icon to change profile picture',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    'Tap image to view full photo • Tap camera icon to update',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                    ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 28),
 
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  // User Info Card
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isDark ? AppTheme.cardDark : AppTheme.cardLight,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: isDark ? AppTheme.cardBorderDark : AppTheme.cardBorderLight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
                     child: Column(
                       children: [
                         ListTile(
-                          leading: const Icon(Icons.person, color: Color(0xFF075E54)),
-                          title: const Text('Username', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                          subtitle: Text(user.username, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                          leading: const Icon(Icons.person_rounded, color: AppTheme.primaryEmerald),
+                          title: Text(
+                            'Username',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                            ),
+                          ),
+                          subtitle: Text(
+                            user.username,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+                            ),
+                          ),
                         ),
-                        const Divider(height: 1),
-                        ListTile(
-                          leading: const Icon(Icons.email, color: Color(0xFF075E54)),
-                          title: const Text('Gmail / Email', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                          subtitle: Text(user.email, style: const TextStyle(fontSize: 15)),
+                        Divider(
+                          height: 1,
+                          color: isDark ? AppTheme.cardBorderDark : AppTheme.cardBorderLight,
+                          indent: 20,
+                          endIndent: 20,
                         ),
-                        const Divider(height: 1),
                         ListTile(
-                          leading: const Icon(Icons.phone, color: Color(0xFF075E54)),
-                          title: const Text('Mobile Number', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                          subtitle: Text(user.mobileNumber ?? 'Not provided', style: const TextStyle(fontSize: 15)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                          leading: const Icon(Icons.email_rounded, color: AppTheme.primaryEmerald),
+                          title: Text(
+                            'Gmail / Email',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                            ),
+                          ),
+                          subtitle: Text(
+                            user.email,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+                            ),
+                          ),
+                        ),
+                        Divider(
+                          height: 1,
+                          color: isDark ? AppTheme.cardBorderDark : AppTheme.cardBorderLight,
+                          indent: 20,
+                          endIndent: 20,
+                        ),
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                          leading: const Icon(Icons.phone_rounded, color: AppTheme.primaryEmerald),
+                          title: Text(
+                            'Mobile Number',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                            ),
+                          ),
+                          subtitle: Text(
+                            user.mobileNumber ?? 'Not provided',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Theme Selection Card
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isDark ? AppTheme.cardDark : AppTheme.cardLight,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: isDark ? AppTheme.cardBorderDark : AppTheme.cardBorderLight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                              color: AppTheme.primaryEmerald,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'App Theme Mode',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildThemeChip(
+                                label: 'Light Theme ☀️',
+                                isSelected: settings.themeMode == ThemeMode.light,
+                                onTap: () => settings.setThemeMode(ThemeMode.light),
+                                isDark: isDark,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _buildThemeChip(
+                                label: 'Dark Theme 🌙',
+                                isSelected: settings.themeMode == ThemeMode.dark,
+                                onTap: () => settings.setThemeMode(ThemeMode.dark),
+                                isDark: isDark,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -150,21 +309,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   SizedBox(
                     width: double.infinity,
-                    height: 48,
+                    height: 52,
                     child: ElevatedButton.icon(
                       onPressed: _handleLogout,
-                      icon: const Icon(Icons.logout),
-                      label: const Text('LOG OUT', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      icon: const Icon(Icons.logout_rounded, color: Colors.white),
+                      label: const Text(
+                        'LOG OUT',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Colors.white),
+                      ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red[700],
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        backgroundColor: Colors.redAccent.withValues(alpha: 0.85),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                        elevation: 4,
                       ),
                     ),
                   ),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
     );
   }
+
+  Widget _buildThemeChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppTheme.primaryEmerald.withValues(alpha: 0.15)
+              : (isDark ? AppTheme.surfaceDark : AppTheme.bgLight),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? AppTheme.primaryEmerald
+                : (isDark ? AppTheme.cardBorderDark : AppTheme.cardBorderLight),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected
+                ? AppTheme.primaryEmerald
+                : (isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight),
+          ),
+        ),
+      ),
+    );
+  }
 }
+
+
+

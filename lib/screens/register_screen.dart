@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/call_provider.dart';
 import '../providers/chat_provider.dart';
+import '../theme/app_theme.dart';
 import 'main_shell_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -42,9 +44,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (success && mounted) {
       if (authProvider.token != null && authProvider.currentUser != null) {
+        final callProvider = Provider.of<CallProvider>(context, listen: false);
         chatProvider.connectWebSocket(
           authProvider.token!,
           authProvider.currentUser!.username,
+          onCallReceived: (data) {
+            final status = data['status']?.toString();
+            if (status == 'RINGING') {
+              callProvider.handleIncomingCall(data);
+            } else {
+              callProvider.updateCallFromRemote(data);
+            }
+          },
         );
         chatProvider.fetchContacts(authProvider.token!);
       }
@@ -66,100 +77,134 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFECE5DD),
+      backgroundColor: AppTheme.bgDark,
       appBar: AppBar(
         title: const Text('Create Account'),
-        backgroundColor: const Color(0xFF075E54),
-        foregroundColor: Colors.white,
+        backgroundColor: AppTheme.surfaceDark,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppTheme.cardDark,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: AppTheme.cardBorder),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(28.0),
               child: Form(
                 key: _formKey,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
-                      'Register for chatting',
+                      'Register New Account',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF075E54),
+                        color: AppTheme.textPrimary,
+                        letterSpacing: 0.3,
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Join chatting & connect instantly',
+                      style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                    ),
+                    const SizedBox(height: 24),
                     TextFormField(
                       controller: _usernameController,
+                      style: const TextStyle(color: AppTheme.textPrimary),
                       decoration: const InputDecoration(
                         labelText: 'Username',
-                        prefixIcon: Icon(Icons.person),
-                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.person_outline_rounded),
                       ),
                       validator: (v) => v == null || v.trim().isEmpty
                           ? 'Please enter username'
                           : null,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
                     TextFormField(
                       controller: _emailController,
+                      style: const TextStyle(color: AppTheme.textPrimary),
                       keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(
                         labelText: 'Gmail / Email',
-                        prefixIcon: Icon(Icons.email),
-                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.email_outlined),
                       ),
                       validator: (v) => v == null || !v.contains('@')
                           ? 'Please enter valid email'
                           : null,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
                     TextFormField(
                       controller: _mobileController,
+                      style: const TextStyle(color: AppTheme.textPrimary),
                       keyboardType: TextInputType.phone,
                       decoration: const InputDecoration(
                         labelText: 'Mobile Number',
-                        prefixIcon: Icon(Icons.phone),
-                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.phone_outlined),
                       ),
                       validator: (v) => v == null || v.trim().length < 8
                           ? 'Please enter valid mobile number'
                           : null,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
                     TextFormField(
                       controller: _passwordController,
+                      style: const TextStyle(color: AppTheme.textPrimary),
                       obscureText: true,
                       decoration: const InputDecoration(
                         labelText: 'Password',
-                        prefixIcon: Icon(Icons.lock),
-                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.lock_outline_rounded),
                       ),
                       validator: (v) => v == null || v.length < 4
                           ? 'Password must be at least 4 characters'
                           : null,
                     ),
-                    const SizedBox(height: 24),
-                    SizedBox(
+                    const SizedBox(height: 28),
+                    Container(
                       width: double.infinity,
-                      height: 48,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        gradient: AppTheme.primaryGradient,
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryEmerald.withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
                       child: ElevatedButton(
                         onPressed: authProvider.isLoading ? null : _handleRegister,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF075E54),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                         ),
                         child: authProvider.isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('REGISTER', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            ? const CircularProgressIndicator(color: AppTheme.bgDark)
+                            : const Text(
+                                'REGISTER',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.bgDark,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
                       ),
                     ),
                   ],
@@ -172,3 +217,4 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
+

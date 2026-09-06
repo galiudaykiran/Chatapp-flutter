@@ -193,5 +193,220 @@ class ApiService {
       throw Exception('Unable to reach server (${ApiConfig.baseUrl}). Check Server IP.');
     }
   }
+
+  static Future<Map<String, dynamic>> createGroup({
+    required String token,
+    required String name,
+    String? description,
+    required List<String> members,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConfig.createGroupUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'name': name,
+          'description': description ?? '',
+          'members': members,
+        }),
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('HTTP ${response.statusCode}: Failed to create group');
+      }
+    } on TimeoutException {
+      throw Exception('Connection timed out (${ApiConfig.baseUrl}). Check Server IP.');
+    } on SocketException {
+      throw Exception('Unable to reach server (${ApiConfig.baseUrl}). Check Server IP.');
+    }
+  }
+
+  static Future<List<dynamic>> getMyGroups(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse(ApiConfig.myGroupsUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as List<dynamic>;
+      } else {
+        throw Exception('HTTP ${response.statusCode}: Failed to fetch groups');
+      }
+    } on TimeoutException {
+      throw Exception('Connection timed out (${ApiConfig.baseUrl}). Check Server IP.');
+    } on SocketException {
+      throw Exception('Unable to reach server (${ApiConfig.baseUrl}). Check Server IP.');
+    }
+  }
+
+  static Future<bool> leaveGroup(String groupId, String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/groups/$groupId/leave'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(_timeout);
+
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<String?> summarizeChat(List<String> messages, String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/ai/summarize'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'messages': messages}),
+      ).timeout(const Duration(seconds: 25));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['summary']?.toString();
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<String?> askGemini(String prompt, String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/ai/ask'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'prompt': prompt}),
+      ).timeout(const Duration(seconds: 25));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['reply']?.toString();
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<List<dynamic>> fetchMyTasks(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/tasks/my-tasks'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as List<dynamic>;
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static Future<List<dynamic>> fetchTasksForTarget(String targetId, String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/tasks/target/$targetId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as List<dynamic>;
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static Future<Map<String, dynamic>?> createTaskReminder({
+    required String token,
+    required String title,
+    String? description,
+    required String targetId,
+    required bool isGroup,
+    required int scheduledTimestamp,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/tasks/create'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'title': title,
+          'description': description ?? '',
+          'targetId': targetId,
+          'isGroup': isGroup,
+          'scheduledTimestamp': scheduledTimestamp,
+        }),
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<bool> toggleTaskCompleted(int id, String token) async {
+    try {
+      final response = await http.put(
+        Uri.parse('${ApiConfig.baseUrl}/api/tasks/$id/toggle'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(_timeout);
+
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<bool> deleteTask(int id, String token) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${ApiConfig.baseUrl}/api/tasks/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(_timeout);
+
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
 }
 

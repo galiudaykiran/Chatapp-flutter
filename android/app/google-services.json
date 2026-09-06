@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "247662359205",
+    "project_id": "docupocket-ogl9n",
+    "storage_bucket": "docupocket-ogl9n.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:247662359205:android:624cd2d033a217764cd34c",
+        "android_client_info": {
+          "package_name": "com.chatapp.chatapplication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAgjal_9EXr-W8ullN939KsuCXZDIdTSk0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
